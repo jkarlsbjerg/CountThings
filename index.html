@@ -45,7 +45,7 @@
             '#79b756', '#e4ed86', '#dc88ae', '#e2e8f0'
         ];
 
-        const INITIAL_CATEGORIES = ['None', 'Stretch', 'Band', 'Massage', 'Other'];
+        const INITIAL_CATEGORIES = ['None', 'Stretch', 'Band', 'Massage', 'Mobility', 'Other'];
 
         const INITIAL_DATA = [
             { id: '1', name: '01 cat/cow', exportName: 'cat/cow', exportGroup: 'None', color: BASE_COLORS[0], count: 0 },
@@ -87,7 +87,9 @@
             { id: '36', name: '40 x20 air squat', exportName: 'x20 air squat', exportGroup: 'None', color: BASE_COLORS[6], count: 0 },
             { id: '37', name: '41 squat stretch', exportName: 'deep squat stretch', exportGroup: 'None', color: BASE_COLORS[6], count: 0 },
             { id: '38', name: '50 skater twist', exportName: 'skater twist', exportGroup: 'None', color: BASE_COLORS[6], count: 0 },
-            { id: '39', name: '51 x10 calf', exportName: 'x10 calf raise and stretch', exportGroup: 'None', color: BASE_COLORS[6], count: 0 }
+            { id: '39', name: '51 x10 calf', exportName: 'x10 calf raise and stretch', exportGroup: 'None', color: BASE_COLORS[6], count: 0 },
+            { id: '60', name: '60: SMM (full)', exportName: 'SMM (full)', exportGroup: 'Mobility', color: BASE_COLORS[2], count: 0 },
+            { id: '61', name: '61: SMM (partial)', exportName: 'SMM (partial)', exportGroup: 'Mobility', color: BASE_COLORS[2], count: 0 }
         ];
 
         function darkenColor(hex, percent) {
@@ -105,9 +107,17 @@
                 const saved = localStorage.getItem('thingCountApp_v2_data');
                 if (saved) {
                     const parsed = JSON.parse(saved);
-                    if (!parsed.some(i => i.exportName === 'Luis')) {
-                        parsed.push({ id: '40', name: '35 Luis', exportName: 'Luis', exportGroup: 'Massage', color: BASE_COLORS[5], count: 0 });
-                    }
+                    // Migration: Inject new default items if missing
+                    const required = [
+                        { id: '40', name: '35 Luis', exportName: 'Luis', exportGroup: 'Massage', color: BASE_COLORS[5], count: 0 },
+                        { id: '60', name: '60: SMM (full)', exportName: 'SMM (full)', exportGroup: 'Mobility', color: BASE_COLORS[2], count: 0 },
+                        { id: '61', name: '61: SMM (partial)', exportName: 'SMM (partial)', exportGroup: 'Mobility', color: BASE_COLORS[2], count: 0 }
+                    ];
+                    required.forEach(req => {
+                        if (!parsed.some(i => i.exportName === req.exportName)) {
+                            parsed.push(req);
+                        }
+                    });
                     return parsed;
                 }
                 return INITIAL_DATA;
@@ -115,7 +125,14 @@
 
             const [categories, setCategories] = useState(() => {
                 const saved = localStorage.getItem('thingCountApp_v2_cats');
-                return saved ? JSON.parse(saved) : INITIAL_CATEGORIES;
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (!parsed.includes('Mobility')) {
+                        parsed.push('Mobility');
+                    }
+                    return parsed;
+                }
+                return INITIAL_CATEGORIES;
             });
             
             const [editingItem, setEditingItem] = useState(null);
@@ -229,21 +246,45 @@
                     </header>
 
                     <main className="p-3 max-w-2xl mx-auto grid grid-cols-2 gap-3">
-                        {itemsWithGradient.map(item => (
-                            <div key={item.id} className="relative rounded-xl shadow-sm flex flex-col transition-transform active:scale-[0.97]" style={{ backgroundColor: item.displayColor }}>
-                                <button onClick={() => setEditingItem({...item})} className="absolute top-2.5 left-2.5 w-3 h-3 rounded-full bg-black/20 hover:bg-black/40 transition-colors shadow-sm" />
-                                <div className="pt-3 px-2 pb-1 text-center text-gray-800 text-sm font-semibold">{item.name}</div>
-                                <div className="flex items-center justify-between px-2 pb-3">
-                                    <button onClick={() => updateCount(item.id, -1)} className="w-12 h-12 flex items-center justify-center text-gray-900/60 hover:text-gray-900 active:bg-black/10 rounded-full">
-                                        <Minus className="w-6 h-6" />
-                                    </button>
-                                    <div className="text-4xl font-bold text-gray-900 w-16 text-center tabular-nums">{item.count}</div>
-                                    <button onClick={() => updateCount(item.id, 1)} className="w-12 h-12 flex items-center justify-center text-gray-900/60 hover:text-gray-900 active:bg-black/10 rounded-full">
-                                        <Plus className="w-6 h-6" />
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
+                        {(() => {
+                            let currentCategory = null;
+                            const elements = [];
+                            
+                            itemsWithGradient.forEach(item => {
+                                const itemCategory = item.exportGroup || 'None';
+                                
+                                // Insert the full-width Category Banner if the category changed
+                                if (itemCategory !== currentCategory) {
+                                    elements.push(
+                                        <div key={`header-${itemCategory}`} className="col-span-2 pt-5 pb-1 text-center font-bold text-gray-800 text-sm tracking-wide uppercase">
+                                            {itemCategory === 'None' ? 'Uncategorized' : itemCategory}
+                                        </div>
+                                    );
+                                    currentCategory = itemCategory;
+                                }
+
+                                elements.push(
+                                    <div key={item.id} className="relative rounded-xl shadow-sm flex flex-col transition-transform active:scale-[0.97]" style={{ backgroundColor: item.displayColor }}>
+                                        {/* Settings Dot at bottom, 30% from left */}
+                                        <button 
+                                            onClick={() => setEditingItem({...item})} 
+                                            className="absolute bottom-3 left-[30%] w-3 h-3 rounded-full bg-black/20 hover:bg-black/40 transition-colors shadow-sm z-10" 
+                                        />
+                                        <div className="pt-3 px-2 pb-1 text-center text-gray-800 text-sm font-semibold">{item.name}</div>
+                                        <div className="flex items-center justify-between px-2 pb-3">
+                                            <button onClick={() => updateCount(item.id, -1)} className="w-12 h-12 flex items-center justify-center text-gray-900/60 hover:text-gray-900 active:bg-black/10 rounded-full">
+                                                <Minus className="w-6 h-6" />
+                                            </button>
+                                            <div className="text-4xl font-bold text-gray-900 w-16 text-center tabular-nums">{item.count}</div>
+                                            <button onClick={() => updateCount(item.id, 1)} className="w-12 h-12 flex items-center justify-center text-gray-900/60 hover:text-gray-900 active:bg-black/10 rounded-full">
+                                                <Plus className="w-6 h-6" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            });
+                            return elements;
+                        })()}
                     </main>
 
                     <button onClick={() => setEditingItem({ id: Date.now().toString(), name: '', exportName: '', exportGroup: 'None', color: BASE_COLORS[0], count: 0 })}
