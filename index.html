@@ -107,7 +107,6 @@
                 const saved = localStorage.getItem('thingCountApp_v2_data');
                 if (saved) {
                     const parsed = JSON.parse(saved);
-                    // Migration: Inject new default items if missing
                     const required = [
                         { id: '40', name: '35 Luis', exportName: 'Luis', exportGroup: 'Massage', color: BASE_COLORS[5], count: 0 },
                         { id: '60', name: '60: SMM (full)', exportName: 'SMM (full)', exportGroup: 'Mobility', color: BASE_COLORS[2], count: 0 },
@@ -253,7 +252,6 @@
                             itemsWithGradient.forEach(item => {
                                 const itemCategory = item.exportGroup || 'None';
                                 
-                                // Insert the full-width Category Banner if the category changed
                                 if (itemCategory !== currentCategory) {
                                     elements.push(
                                         <div key={`header-${itemCategory}`} className="col-span-2 pt-5 pb-1 text-center font-bold text-gray-800 text-sm tracking-wide uppercase">
@@ -265,10 +263,10 @@
 
                                 elements.push(
                                     <div key={item.id} className="relative rounded-xl shadow-sm flex flex-col transition-transform active:scale-[0.97]" style={{ backgroundColor: item.displayColor }}>
-                                        {/* Settings Dot at bottom, 30% from left */}
+                                        {/* Settings Dot at bottom, 40% from left */}
                                         <button 
                                             onClick={() => setEditingItem({...item})} 
-                                            className="absolute bottom-3 left-[30%] w-3 h-3 rounded-full bg-black/20 hover:bg-black/40 transition-colors shadow-sm z-10" 
+                                            className="absolute bottom-3 left-[40%] w-3 h-3 rounded-full bg-black/20 hover:bg-black/40 transition-colors shadow-sm z-10" 
                                         />
                                         <div className="pt-3 px-2 pb-1 text-center text-gray-800 text-sm font-semibold">{item.name}</div>
                                         <div className="flex items-center justify-between px-2 pb-3">
