@@ -75,7 +75,7 @@
             '#79b756', '#e4ed86', '#dc88ae', '#e2e8f0'
         ];
 
-        const INITIAL_CATEGORIES = ['None', 'Stretch', 'Band', 'Massage', 'Mobility', 'Other'];
+        const INITIAL_CATEGORIES = ['None', 'Stretch', 'Shoulder', 'Massage', 'Mobility', 'Other'];
 
         const INITIAL_DATA = [
             { id: '1', name: '01 cat/cow', exportName: 'cat/cow', exportGroup: 'None', color: BASE_COLORS[0], count: 0 },
@@ -104,12 +104,12 @@
             { id: '23', name: '15 inner thigh', exportName: 'inner thigh', exportGroup: 'Stretch', color: BASE_COLORS[3], count: 0 },
             { id: '24', name: '16 hip rotator', exportName: 'hip rotator', exportGroup: 'Stretch', color: BASE_COLORS[3], count: 0 },
             { id: '25', name: '17 t-spine twist', exportName: 't-spine twist', exportGroup: 'Stretch', color: BASE_COLORS[3], count: 0 },
-            { id: '26', name: '20 band FULL', exportName: 'full round', exportGroup: 'Band', color: BASE_COLORS[4], count: 0 },
-            { id: '27', name: '21 W-hold', exportName: 'W-hold', exportGroup: 'Band', color: BASE_COLORS[4], count: 0 },
-            { id: '28', name: '22 pull apart', exportName: 'pull apart', exportGroup: 'Band', color: BASE_COLORS[4], count: 0 },
-            { id: '29', name: '23 alphabet', exportName: 'RC alphabet', exportGroup: 'Band', color: BASE_COLORS[4], count: 0 },
-            { id: '30', name: '24 external', exportName: 'RC external', exportGroup: 'Band', color: BASE_COLORS[4], count: 0 },
-            { id: '30a', name: '25 waiter\'s carry 12 lbs 45s', exportName: 'waiter\'s carry (12lbs, 45s)', exportGroup: 'Band', color: BASE_COLORS[4], count: 0 },
+            { id: '26', name: '20 band full round', exportName: 'full round', exportGroup: 'Shoulder', color: BASE_COLORS[4], count: 0 },
+            { id: '27', name: '21 W-hold', exportName: 'W-hold', exportGroup: 'Shoulder', color: BASE_COLORS[4], count: 0 },
+            { id: '28', name: '22 pull apart', exportName: 'pull apart', exportGroup: 'Shoulder', color: BASE_COLORS[4], count: 0 },
+            { id: '29', name: '23 alphabet', exportName: 'RC alphabet', exportGroup: 'Shoulder', color: BASE_COLORS[4], count: 0 },
+            { id: '30', name: '24 external', exportName: 'RC external', exportGroup: 'Shoulder', color: BASE_COLORS[4], count: 0 },
+            { id: '30a', name: '25 waiter\'s carry 12 lbs 45s', exportName: 'waiter\'s carry (12lbs, 45s)', exportGroup: 'Shoulder', color: BASE_COLORS[4], count: 0 },
             { id: '31', name: '30 mas shin', exportName: 'shin', exportGroup: 'Massage', color: BASE_COLORS[5], count: 0 },
             { id: '32', name: '31 mas gun', exportName: 'gun', exportGroup: 'Massage', color: BASE_COLORS[5], count: 0 },
             { id: '33', name: '32 mas finger', exportName: 'finger', exportGroup: 'Massage', color: BASE_COLORS[5], count: 0 },
@@ -120,8 +120,8 @@
             { id: '37', name: '41 squat stretch', exportName: 'deep squat stretch', exportGroup: 'None', color: BASE_COLORS[6], count: 0 },
             { id: '38', name: '50 skater twist', exportName: 'skater twist', exportGroup: 'None', color: BASE_COLORS[6], count: 0 },
             { id: '39', name: '51 x10 calf', exportName: 'x10 calf raise and stretch', exportGroup: 'None', color: BASE_COLORS[6], count: 0 },
-            { id: '60', name: '60: SMM (full)', exportName: 'SMM (full)', exportGroup: 'Mobility', color: BASE_COLORS[2], count: 0 },
-            { id: '61', name: '61: SMM (partial)', exportName: 'SMM (partial)', exportGroup: 'Mobility', color: BASE_COLORS[2], count: 0 }
+            { id: '60', name: '60 SMM (full)', exportName: 'SMM (full)', exportGroup: 'Mobility', color: BASE_COLORS[2], count: 0 },
+            { id: '61', name: '61 SMM (partial)', exportName: 'SMM (partial)', exportGroup: 'Mobility', color: BASE_COLORS[2], count: 0 }
         ];
 
         function darkenColor(hex, percent) {
@@ -151,7 +151,7 @@
                     const parsed = JSON.parse(saved);
                     const requiredIds = [
                         { id: '17a', name: '10 couch', exportName: 'couch', exportGroup: 'Stretch', color: BASE_COLORS[3], count: 0 },
-                        { id: '30a', name: '25 waiter\'s carry 12 lbs 45s', exportName: 'waiter\'s carry (12lbs, 45s)', exportGroup: 'Band', color: BASE_COLORS[4], count: 0 },
+                        { id: '30a', name: '25 waiter\'s carry 12 lbs 45s', exportName: 'waiter\'s carry (12lbs, 45s)', exportGroup: 'Shoulder', color: BASE_COLORS[4], count: 0 },
                         { id: '40', name: '35 Luis', exportName: 'Luis', exportGroup: 'Massage', color: BASE_COLORS[5], count: 0 },
                         { id: '60', name: '60: SMM (full)', exportName: 'SMM (full)', exportGroup: 'Mobility', color: BASE_COLORS[2], count: 0 },
                         { id: '61', name: '61: SMM (partial)', exportName: 'SMM (partial)', exportGroup: 'Mobility', color: BASE_COLORS[2], count: 0 }
