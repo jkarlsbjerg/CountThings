@@ -50,7 +50,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect, useMemo, useRef } = React;
 
         // --- Inline Icons ---
         const Icon = ({ path, className, onClick }) => (
@@ -135,15 +135,6 @@
             return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
         }
 
-        function getSettingsDotColor(hex) {
-            if (!hex) return 'rgba(0,0,0,0.5)';
-            let r = parseInt(hex.slice(1, 3), 16) || 0;
-            let g = parseInt(hex.slice(3, 5), 16) || 0;
-            let b = parseInt(hex.slice(5, 7), 16) || 0;
-            let lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-            return lum > 0.55 ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.85)';
-        }
-
         function App() {
             const [items, setItems] = useState(() => {
                 const saved = localStorage.getItem('thingCountApp_v2_data');
@@ -153,8 +144,8 @@
                         { id: '17a', name: '10 couch', exportName: 'couch', exportGroup: 'Stretch', color: BASE_COLORS[3], count: 0 },
                         { id: '30a', name: '25 waiter\'s carry 12 lbs 45s', exportName: 'waiter\'s carry (12lbs, 45s)', exportGroup: 'Shoulder', color: BASE_COLORS[4], count: 0 },
                         { id: '40', name: '35 Luis', exportName: 'Luis', exportGroup: 'Massage', color: BASE_COLORS[5], count: 0 },
-                        { id: '60', name: '60: SMM (full)', exportName: 'SMM (full)', exportGroup: 'Mobility', color: BASE_COLORS[2], count: 0 },
-                        { id: '61', name: '61: SMM (partial)', exportName: 'SMM (partial)', exportGroup: 'Mobility', color: BASE_COLORS[2], count: 0 }
+                        { id: '60', name: '60 SMM (full)', exportName: 'SMM (full)', exportGroup: 'Mobility', color: BASE_COLORS[2], count: 0 },
+                        { id: '61', name: '61 SMM (partial)', exportName: 'SMM (partial)', exportGroup: 'Mobility', color: BASE_COLORS[2], count: 0 }
                     ];
                     requiredIds.forEach(req => {
                         if (!parsed.some(i => i.id === req.id)) {
@@ -194,6 +185,11 @@
             const [copied, setCopied] = useState(false);
             const [newCatName, setNewCatName] = useState("");
             const [animatingTile, setAnimatingTile] = useState(null);
+
+            // Refs to manage 1-second long-press timer and coordinate drift checks
+            const pressTimerRef = useRef(null);
+            const isLongPressActiveRef = useRef(false);
+            const touchStartPosRef = useRef({ x: 0, y: 0 });
 
             useEffect(() => { localStorage.setItem('thingCountApp_v2_data', JSON.stringify(items)); }, [items]);
             useEffect(() => { localStorage.setItem('thingCountApp_v2_cats', JSON.stringify(categories)); }, [categories]);
@@ -341,6 +337,36 @@
                 setItems(items.map(i => i.exportGroup === cat ? { ...i, exportGroup: 'None' } : i));
             };
 
+            // --- Long-Press Event Logic ---
+            const startPress = (item, clientX, clientY) => {
+                isLongPressActiveRef.current = false;
+                touchStartPosRef.current = { x: clientX, y: clientY };
+                
+                pressTimerRef.current = setTimeout(() => {
+                    isLongPressActiveRef.current = true;
+                    if (window.navigator && window.navigator.vibrate) {
+                        window.navigator.vibrate(50);
+                    }
+                    setEditingItem({ ...item });
+                }, 1000); // Trigger after 1 full second
+            };
+
+            const cancelPress = () => {
+                if (pressTimerRef.current) {
+                    clearTimeout(pressTimerRef.current);
+                    pressTimerRef.current = null;
+                }
+            };
+
+            const handleMove = (clientX, clientY) => {
+                const diffX = Math.abs(clientX - touchStartPosRef.current.x);
+                const diffY = Math.abs(clientY - touchStartPosRef.current.y);
+                // Cancel the timer if the user scrolls or drags beyond 10px
+                if (diffX > 10 || diffY > 10) {
+                    cancelPress();
+                }
+            };
+
             return (
                 <div className="bg-[#f4ebf8] min-h-full">
                     <header className="bg-white px-3 py-3 shadow-sm sticky top-0 z-30 flex items-center justify-between text-[#2e1b6b]">
@@ -383,19 +409,46 @@
                                 const flashPlus = isAnimating && animatingTile.direction === 'increase';
 
                                 elements.push(
-                                    <div id={`tile-${item.id}`} key={item.id} className={`relative rounded-xl shadow-sm flex flex-col transition-transform active:scale-[0.97] ${isAnimating ? 'flash-tile' : ''}`} style={{ backgroundColor: item.displayColor }}>
-                                        <button 
-                                            onClick={() => setEditingItem({...item})} 
-                                            className="absolute bottom-3 left-[60%] w-2 h-2 rounded-full transition-colors shadow-sm z-10 p-2 opacity-80 hover:opacity-100" 
-                                            style={{ backgroundColor: getSettingsDotColor(item.displayColor) }}
-                                        />
-                                        <div className="pt-3 px-2 pb-1 text-center text-gray-800 text-sm font-semibold">{item.name}</div>
+                                    <div 
+                                        id={`tile-${item.id}`} 
+                                        key={item.id} 
+                                        className={`relative rounded-xl shadow-sm flex flex-col transition-transform active:scale-[0.97] ${isAnimating ? 'flash-tile' : ''}`} 
+                                        style={{ backgroundColor: item.displayColor }}
+                                        
+                                        /* Desktop Mouse Events */
+                                        onMouseDown={(e) => {
+                                            if (e.button === 0) startPress(item, e.clientX, e.clientY);
+                                        }}
+                                        onMouseUp={cancelPress}
+                                        onMouseLeave={cancelPress}
+                                        onMouseMove={(e) => handleMove(e.clientX, e.clientY)}
+                                        
+                                        /* Mobile Touch Events */
+                                        onTouchStart={(e) => {
+                                            const t = e.touches[0];
+                                            startPress(item, t.clientX, t.clientY);
+                                        }}
+                                        onTouchEnd={cancelPress}
+                                        onTouchMove={(e) => {
+                                            const t = e.touches[0];
+                                            handleMove(t.clientX, t.clientY);
+                                        }}
+                                    >
+                                        <div className="pt-3 px-2 pb-1 text-center text-gray-800 text-sm font-semibold pointer-events-none">{item.name}</div>
                                         <div className="flex items-center justify-between px-2 pb-3">
-                                            <button onClick={() => updateCount(item.id, -1)} className={`w-12 h-12 flex items-center justify-center text-gray-900/60 hover:text-gray-900 active:bg-black/10 rounded-full ${flashMinus ? 'flash-button' : ''}`}>
+                                            <button 
+                                                onClick={(e) => { 
+                                                    e.stopPropagation(); 
+                                                    if (!isLongPressActiveRef.current) updateCount(item.id, -1); 
+                                                }} 
+                                                onMouseDown={(e) => e.stopPropagation()}
+                                                onTouchStart={(e) => e.stopPropagation()}
+                                                className={`w-12 h-12 flex items-center justify-center text-gray-900/60 hover:text-gray-900 active:bg-black/10 rounded-full ${flashMinus ? 'flash-button' : ''}`}
+                                            >
                                                 <Minus className="w-6 h-6" />
                                             </button>
                                             
-                                            <div className="relative w-16 h-12 flex items-center justify-center">
+                                            <div className="relative w-16 h-12 flex items-center justify-center pointer-events-none">
                                                 {isAnimating ? (
                                                     <React.Fragment>
                                                         <div key={`out-${animatingTile.key}`} className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-gray-900 tabular-nums animate-cross-out">
@@ -410,7 +463,15 @@
                                                 )}
                                             </div>
 
-                                            <button onClick={() => updateCount(item.id, 1)} className={`w-12 h-12 flex items-center justify-center text-gray-900/60 hover:text-gray-900 active:bg-black/10 rounded-full ${flashPlus ? 'flash-button' : ''}`}>
+                                            <button 
+                                                onClick={(e) => { 
+                                                    e.stopPropagation(); 
+                                                    if (!isLongPressActiveRef.current) updateCount(item.id, 1); 
+                                                }} 
+                                                onMouseDown={(e) => e.stopPropagation()}
+                                                onTouchStart={(e) => e.stopPropagation()}
+                                                className={`w-12 h-12 flex items-center justify-center text-gray-900/60 hover:text-gray-900 active:bg-black/10 rounded-full ${flashPlus ? 'flash-button' : ''}`}
+                                            >
                                                 <Plus className="w-6 h-6" />
                                             </button>
                                         </div>
@@ -426,7 +487,7 @@
                         <Plus className="w-9 h-9" />
                     </button>
 
-                    {/* ... (Existing Modals remain unchanged) ... */}
+                    {/* SETTINGS MODAL */}
                     {editingItem && (
                         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center animate-in">
                             <div className="bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
@@ -499,6 +560,8 @@
                             </div>
                         </div>
                     )}
+
+                    {/* HISTORY MODAL */}
                     {showHistoryModal && (
                         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
                             <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[80vh] overflow-hidden">
@@ -533,6 +596,8 @@
                             </div>
                         </div>
                     )}
+
+                    {/* DELETE CONFIRM */}
                     {itemToDelete && (
                         <div className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-6 animate-in">
                             <div className="bg-white rounded-2xl w-full max-w-xs shadow-2xl p-6 text-center">
@@ -546,6 +611,8 @@
                             </div>
                         </div>
                     )}
+
+                    {/* RESET CONFIRM */}
                     {showResetConfirm && (
                         <div className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-6 animate-in">
                             <div className="bg-white rounded-2xl w-full max-w-xs shadow-2xl p-6 text-center">
@@ -559,6 +626,8 @@
                             </div>
                         </div>
                     )}
+
+                    {/* EXPORT LOG */}
                     {showExport && (
                         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
                             <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[80vh]">
